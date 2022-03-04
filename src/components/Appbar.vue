@@ -5,13 +5,26 @@
       <v-icon v-else> mdi-dots-vertical </v-icon>
     </v-btn>
     <v-spacer />
-    <v-btn class="ml-2" min-width="0" text to="/pages/user">
-      <v-icon>mdi-account</v-icon>
-    </v-btn>
+    <v-menu transition="scroll-y-transition">
+      <template v-slot:activator="{ on, attrs }">
+        <v-btn text class="ma-2 ml-2" min-width="0" v-bind="attrs" v-on="on">
+          <v-icon>mdi-account</v-icon>
+        </v-btn>
+      </template>
+      <v-list>
+        <v-list-item link>
+          <v-list-item-title
+            v-text="'Logout '"
+            @click="logout()"
+          ></v-list-item-title>
+        </v-list-item>
+      </v-list>
+    </v-menu>
   </v-app-bar>
 </template>
 
 <script>
+import Axios from "../config/axios";
 import { mapState, mapMutations } from "vuex";
 
 export default {
@@ -34,6 +47,14 @@ export default {
     ...mapMutations({
       setDrawer: "SET_DRAWER",
     }),
+    logout() {
+      let keysToRemove = ["admin", "token"];
+      keysToRemove.forEach((k) => localStorage.removeItem(k));
+      Axios.post("/api/logout").then((res) => {
+        console.log("res :>> ", res);
+      });
+      this.$router.push({ path: "/admin/login" });
+    },
   },
 };
 </script>

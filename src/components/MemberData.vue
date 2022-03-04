@@ -1,51 +1,88 @@
 <template>
   <v-container>
     <v-row align="center" justify="center">
-      <v-row align="center" justify="center">
-        <v-col cols="5">
-          <v-select
-            v-model="searchStatus"
-            outlined
-            dense
-            :items="modeFilter"
-            label="ตัวเลือก"
-          ></v-select>
-        </v-col>
-        <v-col cols="5">
-          <v-text-field
-            dense
-            label="ค้นหา"
-            v-model="search"
-            outlined
-          ></v-text-field>
-        </v-col>
-      </v-row>
-      <v-col cols="12" sm="8" md="11">
-        <v-data-table
-          :headers="headers"
-          :items="datas"
-          :options.sync="options"
-          :server-items-length="totalDatas"
-          :loading="loading"
-          class="elevation-1"
-        ></v-data-table
-      ></v-col>
+      <v-col cols="12">
+        <v-row justify="center">
+          <v-col cols="5">
+            <v-text-field
+              prepend-inner-icon="mdi-map-marker"
+              dense
+              label="ค้นหา"
+              v-model="search"
+              outlined
+            ></v-text-field>
+          </v-col>
+          <v-col cols="3">
+            <v-select
+              v-model="channelRegister"
+              outlined
+              dense
+              :items="modeFilter"
+              item-text="text"
+              item-value="value"
+              label="ช่องทางการลงทะเบียน"
+            ></v-select>
+          </v-col>
+
+          <v-col cols="1">
+            <v-btn elevation="2" @click="clear()">clear</v-btn>
+          </v-col>
+          <v-col cols="12" sm="8" md="11">
+            <!-- :loading="loading" -->
+            <v-data-table
+              :headers="headers"
+              :items="datas"
+              :server-items-length="totalDatas"
+              :options.sync="options"
+              :footer-props="{
+                itemsPerPageOptions: [5, 10],
+              }"
+            >
+              <template v-slot:item.fname="props">
+                <v-chip
+                  color="green"
+                  label
+                  link
+                  outlined
+                  @click="editUser(props.item)"
+                  >{{ props.item.fname }}</v-chip
+                >
+              </template>
+            </v-data-table></v-col
+          >
+        </v-row>
+      </v-col>
     </v-row>
+    <EditUser
+      :data="dataEditUser"
+      :show="showEditUser"
+      @closeEditUser="closeEditUser"
+    />
   </v-container>
 </template>
 
 <script>
 import Axios from "../config/axios";
+import EditUser from "../components/EditUsers.vue";
 export default {
+  components: {
+    EditUser,
+  },
   data() {
     return {
-      searchStatus: null,
-      search: null,
+      showEditUser: false,
+      dataEditUser: [],
+      channelRegister: "",
+      search: "",
       totalDatas: 0,
+      currentPage: 1,
       datas: [],
       loading: true,
       options: {},
-      modeFilter: ["SMS", "Website"],
+      modeFilter: [
+        { value: 1, text: "SMS" },
+        { value: 2, text: "Website" },
+      ],
       headers: [
         {
           text: "ลำดับ",
@@ -77,43 +114,48 @@ export default {
       },
       deep: true,
     },
+    channelRegister() {
+      this.getDataFromApi();
+    },
+    deep: true,
+  },
+  mounted() {
+    this.getDataFromApi();
   },
   methods: {
-    async getDataFromApi() {
-      this.loading = true;
-      await this.getApiCall().then((data) => {
-        this.datas = data.items;
-        this.totalDatas = data.total;
-        this.loading = false;
-      });
+    closeEditUser() {
+      this.showEditUser = false;
+      this.getDataFromApi();
     },
-    async getApiCall() {
+    editUser(data) {
+      this.dataEditUser = data;
+      this.showEditUser = true;
+    },
+    getDataFromApi() {
       const { page, itemsPerPage } = this.options;
-      let items = await this.getDatas(page, itemsPerPage);
-      const total = items.length;
-
-      if (itemsPerPage > 0) {
-        items = items.slice((page - 1) * itemsPerPage, page * itemsPerPage);
-      }
-
-      this.datas = items;
-      this.totalDatas = total;
-    },
-    async getDatas(page, itemsPerPage) {
-      console.log(
-        "page, itemsPerPage, search :>> ",
-        page,
-        itemsPerPage,
-        this.search
-      );
-      await Axios.post("/api/listMemberTable", {
-        page: page,
-        itemsPerPage: itemsPerPage,
-        search: this.search,
-        searchStatus: this.searchStatus,
-      }).then((res) => {
-        console.log("res.data :>> ", res.data);
+      this.currentPage = page;
+      Axios.get(
+        `/api/users?page=${this.currentPage}
+        &per_page=${itemsPerPage}
+        &channel=${this.channelRegister}
+        &search=${this.search}`
+      ).then((res) => {
+        let resultData = res.data.data;
+        resultData.map((data) => {
+          if (data["register_channel"] == 1) {
+            data["register_channel"] = "SMS";
+          } else {
+            data["register_channel"] = "Website";
+          }
+        });
+        this.datas = resultData;
+        this.totalDatas = res.data.total;
       });
+    },
+    clear() {
+      this.channelRegister = "";
+      this.search = "";
+      this.getDataFromApi();
     },
   },
 };

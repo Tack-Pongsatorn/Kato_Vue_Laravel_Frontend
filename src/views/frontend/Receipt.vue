@@ -94,7 +94,6 @@ export default {
         phone: parseLocalStorage.phone,
       })
         .then((res) => {
-          console.log("res.data :>> ", res.data);
           this.data = res.data;
           this.show = true;
         })

@@ -20,9 +20,10 @@ export default new Vuex.Store({
         SET_DRAWER(state, payload) {
           state.drawer = payload
         },
+        DEFAULT() { }
       },
       actions: {
-
+      
       }
     }
   }

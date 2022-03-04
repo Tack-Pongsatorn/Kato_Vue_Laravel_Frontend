@@ -10,28 +10,30 @@
               </v-col>
             </v-row>
           </v-card-text>
-          <v-text-field
-            v-model="user.email"
-            class="mx-4"
-            label="Username"
-            outlined
-          ></v-text-field>
-          <v-text-field
-            v-model="user.password"
-            class="mx-4"
-            label="Password"
-            outlined
-          ></v-text-field>
-          <v-col align="center" justify="center">
-            <v-btn
-              elevation="2"
-              color="blue"
-              class="white--text pa-4"
-              large
-              @click="login()"
-              >ตกลง</v-btn
-            >
-          </v-col>
+          <v-form ref="form" v-model="formValid" lazy-validation>
+            <v-text-field
+              v-model="user.email"
+              class="mx-4"
+              label="Email"
+              outlined
+            ></v-text-field>
+            <v-text-field
+              v-model="user.password"
+              class="mx-4"
+              label="Password"
+              type="password"
+              outlined
+            ></v-text-field>
+            <v-col align="center" justify="center">
+              <v-btn
+                color="blue"
+                class="white--text pa-4"
+                large
+                @click="login()"
+                >ตกลง</v-btn
+              >
+            </v-col>
+          </v-form>
         </v-card>
       </v-col>
     </v-row>
@@ -39,24 +41,32 @@
 </template>
 
 <script>
+import Axios from "@/config/backendAxios";
 export default {
   data() {
     return {
       user: { email: null, password: null },
-      loading: false,
-      error: null,
+      formValid: false,
     };
   },
   methods: {
     async login() {
-      this.error = null;
       try {
-        await this.$store.dispatch("login", this.user);
-        // await this.$router.push({ path: "/admin/dashboard" });
+        await Axios.post("/api/login_admin", this.user).then((res) => {
+          if (res.data.message == "success") {
+            localStorage.setItem("admin", JSON.stringify(res.data.admin));
+            localStorage.setItem("token", res.data.token);
+            this.$router.push({ path: "/admin/dashboard" }).then((res) => {
+              if (res) {
+                window.location.reload();
+              }
+            });
+
+            // window.location.href = '/#/admin/dashboard/'
+          }
+        });
       } catch (error) {
         this.error = error;
-      } finally {
-        this.loading = false;
       }
     },
   },

@@ -6,11 +6,11 @@
     :expand-on-hover="expandOnHover"
     :right="$vuetify.rtl"
     :src="barImage"
-    mobile-break-point="960"
     app
     width="260"
     v-bind="$attrs"
   >
+    <!-- mobile-break-point="960" -->
     <template v-slot:img="props">
       <v-img :gradient="`to bottom, ${barColor}`" v-bind="props" />
     </template>
